@@ -2,6 +2,7 @@
 title: "My Lab Journal"
 subtitle: "Business Data Science Basics"
 author: "Joschka Schwarz"
+author: "Kasper Valtonen"
 ---
 
 ![](assets/logo/TIE_logo.svg){width=80% fig-align="center"}
@@ -9,6 +10,8 @@ author: "Joschka Schwarz"
 This is a template example for lab journaling. Students in the data science courses at the Institute of Entrepreneurship will use this template to learn R for business analytics. Students can replace this text as they wish.
 
 ## How to use
+
+Does this work?
 
 1. Accept the assignment and get your own github repo.
 
