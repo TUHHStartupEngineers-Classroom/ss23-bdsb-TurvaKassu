@@ -1,8 +1,135 @@
 ---
 title: "Data Wrangling"
-author: "Joschka Schwarz"
+author: "Kasper Valtonen"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+Theory:
+Changing dots to underscores
+```{r}
+library(tidyverse)
+library(readxl)
+bikes_tbl <- read_excel("C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\00_data\\01_bike_sales\\01_raw_data\\bikes.xlsx") %>%
+                  # Separate product category name in main and sub
+                  separate(col    = category,
+                           into   = c("category.1", "category.2", "category.3"),
+                           sep    = " - ") %>%
+                  set_names(names(.) %>% str_replace_all("\\.", "_"))
+
+bike_categories_tbl <- bikes_tbl %>% select(1, contains("category"))
+bikes_tbl %>% select(category_1:category_3, everything())
+bike_categories_tbl %>% select(starts_with("category"))
+
+# bikes_tbl %>% pull(price) %>% mean()
+
+bikes_tbl %>% select(category_1, price) %>%
+  rename(
+    'Price in Euro' = price,
+    'Product family' = category_1
+  )
+```
+
+Challenge:
+```{r}
+# Setting up libraries
+library(vroom)
+library(tidyverse)
+library(readxl)
+library(data.table)
+library(dplyr)
+
+```
+
+Let's import the reduced data to R with vroom
+```{r}
+#Importing data
+col_types <- list(
+  patent_id = col_character(20),
+  id = col_character(20),
+  assignee_id = col_character(36),
+  type = col_integer(4),
+  date = col_date("%Y-%m-%d"),
+  num_claims = col_integer(11),
+  organization = col_character(256),
+  mainclass_id = col_character(20),
+  sequence = col_integer(11)
+)
+
+patent_tbl <- vroom(
+            file       = "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\00_data\\03_dataWrangling\\patent.tsv", 
+            delim      = "\t", 
+            col_types  = col_types,
+            na         = c("", "NA", "NULL")
+        )
+
+patent_assignee_tbl <- vroom(
+            file = "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\00_data\\03_dataWrangling\\patent_assignee.tsv",
+            delim      = "\t", 
+            col_types  = col_types,
+            na         = c("", "NA", "NULL")
+            )
+
+assignee_tbl <- vroom(
+            file = "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\00_data\\03_dataWrangling\\assignee.tsv",
+            delim      = "\t", 
+            col_types  = col_types,
+            na         = c("", "NA", "NULL")
+            )
+
+uspc_tbl <- vroom(
+            file = "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\00_data\\03_dataWrangling\\uspc.tsv",
+            delim      = "\t", 
+            col_types  = col_types,
+            na         = c("", "NA", "NULL")
+            )
+
+# Combine tibbles
+complete_patent_tbl <- left_join(
+  patent_tbl, patent_assignee_tbl, by = c("id" = "patent_id")) %>%
+  left_join(assignee_tbl, by = c("assignee_id" = "id")) %>%
+  left_join(uspc_tbl, by = c("id" = "patent_id"))
+```
+
+Transform tibble into data.table and excluding NA values for organization
+```{r}
+patent_dt <- as.data.table(complete_patent_tbl)[!is.na(organization)][!is.na(mainclass_id)]
+```
+
+Question 1: Which organizations posses most number of patents?
+```{r}
+number_of_patents <- patent_dt[, .N, by=organization] %>%
+  .[order(-N)] %>%
+  .[1:10]
+print(number_of_patents)
+  
+```
+
+Question 2: Companies with most patents in August 2014.
+
+First we need to add date column to previous dt manipulation
+```{r}
+number_of_patents_august <- patent_dt[year(date) == 2014 & month(date) == 8, .N, by=organization] %>%
+  .[order(-N)] %>%
+  .[1:10]
+print(number_of_patents)
+
+```
+
+Question 3: What is the most innovative tech industry?
+
+Solve the main class of most number of patents
+```{r}
+# Get the top10 orgs with most patents
+top10_orgs <- patent_dt[, .N, by=organization] %>%
+  .[order(-N)] %>%
+  .[1:10] %>%
+  select(organization)
+
+# Only include rows with orgs from top10_orgs and group by mainclass_id
+top5_mainclasses <- patent_dt[organization %in% top10_orgs$organization, 
+                              .N, by=mainclass_id] %>%
+                    .[order(-N)] %>%
+                    .[1:5]
+
+print(top5_mainclasses)
+
+```
