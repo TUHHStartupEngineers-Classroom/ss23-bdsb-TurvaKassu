@@ -73,8 +73,7 @@ wrangled_covid_data2 <- covid_data_tbl %>%
   ungroup() %>%
   distinct(location, .keep_all = TRUE) %>%
   mutate(mortality = total_deaths / total_cases) %>%
-  rename(region = location) %>%
-  filter(!region = c("Europe", "Asia", ))
+  rename(region = location)
 
   
   merged_data <- merge(wrangled_covid_data2, world, 

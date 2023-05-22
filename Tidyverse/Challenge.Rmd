@@ -9,11 +9,11 @@ library(lubridate)
 
 # 2.0 Importing Files ----
 bikes_tbl <- read_excel(
-  "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\Tidyverse\\bikes.xlsx")
+  "C:\\Users\\35844\\ML\\ss23-bdsb-TurvaKassu\\Tidyverse\\bikes.xlsx")
 bikeshops_tbl <- read_excel(
-  "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\Tidyverse\\bikeshops.xlsx")
+  "C:\\Users\\35844\\ML\\ss23-bdsb-TurvaKassu\\Tidyverse\\bikeshops.xlsx")
 orderlines_tbl <- read_excel(
-  "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\Tidyverse\\orderlines.xlsx")
+  "C:\\Users\\35844\\ML\\ss23-bdsb-TurvaKassu\\Tidyverse\\orderlines.xlsx")
 
 # 3.0 Examining Data ----
 bikes_tbl  %>% head(5)

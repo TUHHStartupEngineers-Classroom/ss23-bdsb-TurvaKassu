@@ -3,30 +3,6 @@ title: "Data Wrangling"
 author: "Kasper Valtonen"
 ---
 
-Theory:
-Changing dots to underscores
-```{r}
-library(tidyverse)
-library(readxl)
-bikes_tbl <- read_excel("C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\00_data\\01_bike_sales\\01_raw_data\\bikes.xlsx") %>%
-                  # Separate product category name in main and sub
-                  separate(col    = category,
-                           into   = c("category.1", "category.2", "category.3"),
-                           sep    = " - ") %>%
-                  set_names(names(.) %>% str_replace_all("\\.", "_"))
-
-bike_categories_tbl <- bikes_tbl %>% select(1, contains("category"))
-bikes_tbl %>% select(category_1:category_3, everything())
-bike_categories_tbl %>% select(starts_with("category"))
-
-# bikes_tbl %>% pull(price) %>% mean()
-
-bikes_tbl %>% select(category_1, price) %>%
-  rename(
-    'Price in Euro' = price,
-    'Product family' = category_1
-  )
-```
 
 Challenge:
 ```{r}
@@ -43,40 +19,40 @@ Let's import the reduced data to R with vroom
 ```{r}
 #Importing data
 col_types <- list(
-  patent_id = col_character(20),
-  id = col_character(20),
-  assignee_id = col_character(36),
-  type = col_integer(4),
+  patent_id = col_character(),
+  id = col_character(),
+  assignee_id = col_character(),
+  type = col_integer(),
   date = col_date("%Y-%m-%d"),
-  num_claims = col_integer(11),
-  organization = col_character(256),
-  mainclass_id = col_character(20),
-  sequence = col_integer(11)
+  num_claims = col_integer(),
+  organization = col_character(),
+  mainclass_id = col_character(),
+  sequence = col_integer()
 )
 
 patent_tbl <- vroom(
-            file       = "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\00_data\\03_dataWrangling\\patent.tsv", 
+            file       = "C:\\Users\\35844\\ML\\ss23-bdsb-TurvaKassu\\Patent_data_reduced\\patent.tsv", 
             delim      = "\t", 
             col_types  = col_types,
             na         = c("", "NA", "NULL")
         )
 
 patent_assignee_tbl <- vroom(
-            file = "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\00_data\\03_dataWrangling\\patent_assignee.tsv",
+            file = "C:\\Users\\35844\\ML\\ss23-bdsb-TurvaKassu\\Patent_data_reduced\\patent_assignee.tsv",
             delim      = "\t", 
             col_types  = col_types,
             na         = c("", "NA", "NULL")
             )
 
 assignee_tbl <- vroom(
-            file = "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\00_data\\03_dataWrangling\\assignee.tsv",
+            file = "C:\\Users\\35844\\ML\\ss23-bdsb-TurvaKassu\\Patent_data_reduced\\assignee.tsv",
             delim      = "\t", 
             col_types  = col_types,
             na         = c("", "NA", "NULL")
             )
 
 uspc_tbl <- vroom(
-            file = "C:\\Users\\kaspe\\BusinessData\\ss23-bdsb-TurvaKassu\\00_data\\03_dataWrangling\\uspc.tsv",
+            file = "C:\\Users\\35844\\ML\\ss23-bdsb-TurvaKassu\\Patent_data_reduced\\uspc.tsv",
             delim      = "\t", 
             col_types  = col_types,
             na         = c("", "NA", "NULL")
