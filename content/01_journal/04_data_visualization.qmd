@@ -1,8 +1,99 @@
 ---
 title: "Data Visualization"
-author: "Joschka Schwarz"
+author: "Kasper Valtonen"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+Reading data into tibble
+```{r}
+library(tidyverse)
+library(vroom)
+library(readxl)
+library(readr)
+library(scales)
+col_types <- list(
+  location = col_character(),
+  date = col_date("YYYY-MM-DD"),
+  total_cases = col_integer(11)
+)
+covid_data_tbl <- read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv") %>%
+  as_tibble()
+```
+
+Filtering rows with cases from Spain, France, Germany, UK, USA
+```{r}
+selected_countries <- c("Spain", "France", "United Kingdom", "United States", "Germany")
+covid_data_filtered_tbl <- covid_data_tbl %>%
+  filter(!is.na("continent"), covid_data_tbl$location %in% selected_countries)
+
+```
+
+
+Selecting columns that we need: Location, date, total_cases
+```{r}
+wrangled_covid_data <- covid_data_filtered_tbl %>%
+  select(location, date, total_cases)
+
+```
+
+
+Plot it with ggplot2
+```{r}
+desired_colors <- c("Spain" = "red", "France" = "blue", "United Kingdom" = "green", "United States" = "orange", "Germany" = "purple")
+ggplot(wrangled_covid_data, aes(x = date, y = total_cases, color = location)) +
+  geom_line() +
+  scale_color_manual(values = desired_colors) +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "1 year") +
+  labs(x = "Date", y = "Total Cases") +
+  ggtitle("Total Cases Over Time in Desired Locations")
+
+
+```
+
+
+***********
+
+Challenge 2:
+
+Lets merge the map data in
+```{r}
+world <- map_data("world") %>%
+  distinct(region, .keep_all = TRUE)
+
+
+wrangled_covid_data2 <- covid_data_tbl %>%
+  filter(!is.na(location)) %>%
+  select(location, date, total_cases, total_deaths) %>% 
+  mutate(location = case_when(
+    location == "United Kingdom" ~ "UK",
+    location == "United States" ~ "USA",
+    location == "Democratic Republic of Congo" ~ "Democratic Republic of the Congo",
+    TRUE ~ location)) %>%
+  group_by(location) %>%
+  slice_max(order_by = total_cases, n = 1) %>%
+  ungroup() %>%
+  distinct(location, .keep_all = TRUE) %>%
+  mutate(mortality = total_deaths / total_cases) %>%
+  rename(region = location) %>%
+  filter(!region = c("Europe", "Asia", ))
+
+  
+  merged_data <- merge(wrangled_covid_data2, world, 
+                       by = "region", all.x = TRUE)
+```
+
+
+Now we are ready to plot the value on a map
+```{r}
+
+ggplot(merged_data) +
+  geom_map(map = world,
+           aes(map_id = region, fill = mortality),
+           color = "black") +
+  scale_fill_gradient(low = "blue", high = "red", na.value = "gray", 
+                      limits = c(0.001, 0.05) ) +
+  labs(title = "COVID-19 mortality rate on Heat Map") +
+  coord_map() +
+  theme_bw()
+```
+
+
