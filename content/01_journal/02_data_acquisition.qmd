@@ -1,8 +1,103 @@
 ---
 title: "Data Acquisition"
-author: "Joschka Schwarz"
+author: "Kasper Valtonen"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+Challenge:
+
+1. Getting Instagam followers of single user. First we need to get the account id
+```{r}
+#First lets load all necessary libraries
+library(tidyverse) # Main Package - Loads dplyr, purrr, etc.
+library(rvest)     # HTML Hacking & Web Scraping
+library(xopen)     # Quickly opening URLs
+library(jsonlite)  # converts JSON files to R objects
+library(glue)      # concatenate strings
+library(stringi)   # character string/text processing
+library(httr)      # http requests
+
+# Getting user id for "Kassu_1999"
+url <- "https://instagram47.p.rapidapi.com/get_user_id"
+
+queryString <- list(username = "kassu_1999")
+
+response <- VERB("GET", url, query = queryString, add_headers('X-RapidAPI-Key' = '7d3612512fmsh3b8eaaed9d17621p163f47jsn474741263db5', 'X-RapidAPI-Host' = 'instagram47.p.rapidapi.com'), content_type("application/octet-stream"))
+
+user_id <- content(response, as="parsed")$user_id
+user_id
+
+# Getting followers of user with user_id
+url <- "https://instagram47.p.rapidapi.com/user_followers"
+
+queryString <- list(userid = user_id)
+
+response <- VERB("GET", url, query = queryString, add_headers('X-RapidAPI-Key' = '7d3612512fmsh3b8eaaed9d17621p163f47jsn474741263db5', 'X-RapidAPI-Host' = 'instagram47.p.rapidapi.com'), content_type("application/octet-stream"))
+
+# Getting response to tibble
+response_content <- content(response, as = "text")
+response_json <- fromJSON(response_content)
+followers <- response_json$body$edges
+followers_tbl <- head(as_tibble(followers), 10)
+followers_tbl
+
+
+```
+
+
+
+Part 2: Scraping data from https://www.rosebikes.de/
+
+```{r}
+# Setting home parameters
+url_home <- "https://www.rosebikes.de/fahrräder"
+
+html_home <- read_html(url_home)
+
+# Getting bike families
+bike_families_tbl <- html_home %>%
+  html_nodes(".catalog-navigation__link") %>%
+  html_attr('title') %>%
+  discard(.p = ~stringr::str_detect(.x,"Sale|Bike Finder|Schnell verfügbare Bikes")) %>%
+  enframe(name = "position", value = "family_class")
+
+# Gettin url's from same elements and adding domain
+bike_url_tbl <- html_home %>%
+  html_nodes(".catalog-navigation__link") %>%
+  html_attr('href') %>%
+  discard(.p = ~stringr::str_detect(.x,"Sale|Bike Finder|Schnell verfügbare Bikes")) %>%
+  enframe(name = "position", value = "url") %>%
+  mutate(
+    url = glue("https://www.rosebikes.de{url}") )
+  
+
+# Joining two tibbles
+bike_families_url_tbl <- left_join(bike_families_tbl, bike_url_tbl)
+
+# Get url from first bike category
+mtb_category_url <- bike_families_url_tbl$url[1]
+
+# Get html of mtb category bikes
+mtb_html <- read_html(mtb_category_url)
+
+# Scrape price data from mtb category bikes
+mtb_price_tbl <- mtb_html %>%
+  html_nodes(".catalog-category-bikes__price-title") %>%
+  html_text() %>%
+  str_replace("^[^0-9]+", "") %>%
+  str_replace("[^0-9]+$", "") %>%
+  
+  enframe(name = "position", value = "price")
+
+# Scrape name data from mtb category bikes
+mtb_name_tbl <- mtb_html %>%
+  html_nodes("h4.basic-headline__title") %>%
+  html_text() %>%
+  enframe(name = "position", value = "name")
+
+# Join the tibbles
+mtb_bikes_data_tbl <- left_join(mtb_name_tbl, mtb_price_tbl)
+
+mtb_bikes_data_tbl
+
+```
+

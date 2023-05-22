@@ -1,0 +1,68 @@
+```{r}
+# Data Science at TUHH ------------------------------------------------------
+# SALES ANALYSIS ----
+
+# 1.0 Load libraries ----
+library(tidyverse)
+library(readxl)
+library(lubridate)
+
+# 2.0 Importing Files ----
+bikes_tbl <- read_excel(
+  "C:\\Users\\35844\\ML\\ss23-bdsb-TurvaKassu\\Tidyverse\\bikes.xlsx")
+bikeshops_tbl <- read_excel(
+  "C:\\Users\\35844\\ML\\ss23-bdsb-TurvaKassu\\Tidyverse\\bikeshops.xlsx")
+orderlines_tbl <- read_excel(
+  "C:\\Users\\35844\\ML\\ss23-bdsb-TurvaKassu\\Tidyverse\\orderlines.xlsx")
+
+# 3.0 Examining Data ----
+bikes_tbl  %>% head(5)
+bikeshops_tbl %>% head(5)
+orderlines_tbl %>% head(5)
+
+
+# 4.0 Joining Data ----
+merged_orderlines <- orderlines_tbl %>% 
+  left_join(bikes_tbl, by = c("product.id" =  "bike.id")) %>%
+  left_join(bikeshops_tbl, by = c("customer.id" = "bikeshop.id"))
+
+# 5.0 Wrangling Data ----
+bike_orderlines_wrangled_tbl <- merged_orderlines %>%
+  # 5.1 Separate category name
+  separate(col    = location,
+           into   = c("city", "state"),
+           sep    = ", ") %>%
+  mutate(total.price = price * quantity) %>%
+  select(-ends_with(".id")) %>%
+  bind_cols(merged_orderlines %>% select(order.id)) %>%
+  select(order.id, contains("order"), contains("model"), contains("category"),
+         price, quantity, total.price,
+         everything()) %>%
+  rename(bikeshop = name) %>%
+  set_names(names(.) %>% str_replace_all("\\.", "_"))
+
+bike_orderlines_wrangled_tbl %>% head(5)
+
+# 6.0 Business Insights ----
+
+# 6.1 Sales by Year and State ----
+
+# Step 1 - Manipulate
+sales_by_year_date <- bike_orderlines_wrangled_tbl %>%
+  select("order_date", "total_price", "state") %>%
+  mutate(year_column = year(order_date)) %>%
+  group_by(year_column, state)%>%
+  summarise(sales = sum(total_price))
+
+  sales_by_year_date
+  
+# Step 2 - Visualize
+ggplot(sales_by_year_date, aes(x = year_column, y = sales, fill = factor(state))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~state, ncol = 3) +
+  labs(x = "Year", y = "Sales", title = "Total Price by Year and State") +
+  scale_fill_discrete(name = "sales") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
